@@ -19,8 +19,8 @@ the appropriate rotational velocities to the odrive motors.
 
 ### Important!
 
-On the Odrive controller, it is expected that the left wheel is motor 0 and the
-right wheel is motor 1. If you do not conform to this, the controller will always
+On the Odrive controller, it is expected that the right wheel is motor 0 and the
+left wheel is motor 1. If you do not conform to this, the controller will always
 do the inverse of what you want, which won't work very well.
 
 ### Node Details

@@ -12,16 +12,19 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/select.h>
 #include <unistd.h>
 #include <fcntl.h>
 
 class OdriveInterface {
 private:
 
+   /* connection to the controller as
+    * well as the controller math object */
    int connection;
    DiffDriveController controller;
 
-   enum Wheel { L_WHEEL=0, R_WHEEL=1 };
+   enum Wheel { R_WHEEL=0, L_WHEEL=1 };
 
    double get_rot_vel(Wheel wheel) {
 
@@ -45,9 +48,18 @@ again:
 
       count = 0;
 
-      /* recieve the response */
-      char res[30];
+      /* select on read */ 
+      fd_set wait;
+      struct timeval timeout;
+      char res[100];
+
 again2:
+      FD_ZERO(&wait);
+      FD_SET(connection,&wait);
+      timeout = { 0, 100000 };
+      select(connection+1,&wait,NULL,NULL,&timeout);
+
+      /* recieve the response */
       count = read(connection,res+count,30-count);
       if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
          errno = 0;
@@ -97,36 +109,36 @@ public:
          exit(1);
 
       }
+   }
 
-      void command_velocity(const geometry_msgs::msg::Twist & cmd) {
+   void command_velocity(const geometry_msgs::msg::Twist & cmd) {
 
-         double linear = cmd.linear.x;
-         double angular = cmd.angular.z;
+      double linear = cmd.linear.x;
+      double angular = cmd.angular.z;
 
-         double l_rot_vel, r_rot_vel;
+      double l_rot_vel, r_rot_vel;
 
-         controller.generate_rotational_velocities(linear,angular,l_rot_vel,r_rot_vel);
+      controller.generate_rotational_velocities(linear,angular,l_rot_vel,r_rot_vel);
 
-         set_rot_vel(L_WHEEL,l_rot_vel);
-         set_rot_vel(R_WHEEL,r_rot_vel);
-
-      }
-
-      void collect_velocity(geometry_msgs::msg::Twist & coll) {
-
-         double linear, angular;
-
-         double l_rot_vel = get_rot_vel(L_WHEEL);
-         double r_rot_vel = get_rot_vel(R_WHEEL);
-
-         controller.compute_command_velocities(linear,angular,l_rot_vel,r_rot_vel);
-
-         coll.linear.x = linear;
-         coll.angular.z = angular;
-
-      }
+      set_rot_vel(L_WHEEL,l_rot_vel);
+      set_rot_vel(R_WHEEL,r_rot_vel);
 
    }
+
+   void collect_velocity(geometry_msgs::msg::Twist & coll) {
+
+      double linear, angular;
+
+      double l_rot_vel = get_rot_vel(L_WHEEL);
+      double r_rot_vel = get_rot_vel(R_WHEEL);
+
+      controller.compute_command_velocities(linear,angular,l_rot_vel,r_rot_vel);
+
+      coll.linear.x = linear;
+      coll.angular.z = angular;
+
+   }
+
 
 };
 
