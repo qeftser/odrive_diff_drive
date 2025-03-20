@@ -32,7 +32,7 @@ private:
 
       /* load the command */
       char cmd[4];
-      snprintf(cmd,4,"f %d",wheel);
+      snprintf(cmd,4,"f %d\n",wheel);
 
       int count = 0;
 
@@ -77,8 +77,8 @@ again2:
    void set_rot_vel(Wheel wheel, double value) {
 
       /* load the command */
-      char cmd[30];
-      snprintf(cmd,30,"v %d %lf 0",wheel,value);
+      char cmd[128];
+      snprintf(cmd,128,"v %d %lf 0\n",wheel,value);
 
       int len = strlen(cmd);
 
