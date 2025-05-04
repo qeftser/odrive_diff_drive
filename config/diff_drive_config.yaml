@@ -1,0 +1,18 @@
+/odrive_diff_drive/diff_drive:
+  ros__parameters:
+    vel_in: "cmd_vel"
+    clear_in: "clear_odrive"
+    reset_in: "reset_odrive"
+    publish_actual_vel: true
+    vel_out: "real_cmd_vel"
+    vel_publish_interval: 0.1
+
+    l_wheel_rad: 1.0
+    r_wheel_rad: 1.0
+    center_dist: 1.0
+
+    odrive0_filepath: "/dev/ttyACM0"
+    odrive0_multiplier: -1.0
+    odrive1_filepath: "/dev/ttyACM0"
+    odrive1_multiplier: +1.0
+

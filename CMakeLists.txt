@@ -16,4 +16,7 @@ ament_target_dependencies(diff_drive rclcpp geometry_msgs std_msgs)
 install(TARGETS diff_drive 
         DESTINATION lib/${PROJECT_NAME})
 
+install(DIRECTORY launch config
+        DESTINATION share/${PROJECT_NAME})
+
 ament_package()

@@ -12,7 +12,7 @@ using std::placeholders::_1;
 class DiffDrive : public rclcpp::Node {
 public:
 
-   DiffDrive() : Node("odrive_diff_drive") {
+   DiffDrive() : Node("diff_drive") {
 
       /* set the exposed parameters */
 
