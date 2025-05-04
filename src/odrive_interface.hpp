@@ -21,90 +21,92 @@ private:
 
    /* connection to the controller as
     * well as the controller math object */
-   int connection;
+   int connection[2];
+   double multiplier[2];
    DiffDriveController controller;
 
    enum Wheel { R_WHEEL=0, L_WHEEL=1 };
 
-   double get_rot_vel(Wheel wheel) {
+   void set_rot_vel(enum Wheel wheel, double velocity) {
+      char buf[1024];
 
-      double pos, vel;
+      snprintf(buf,1024,"v 0 %f\n", velocity * multiplier[wheel]);
+      write(connection[wheel],buf,strlen(buf));
 
-      /* load the command */
-      char cmd[4];
-      snprintf(cmd,4,"f %d\n",wheel);
-
-      int count = 0;
-
-      /* send the command */
-again:
-      count = write(connection,cmd+count,4-count);
-      if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
-         errno = 0;
-         goto again;
-      }
-      if (errno != 0)
-         return 0.0;
-
-      count = 0;
-
-      /* select on read */ 
-      fd_set wait;
-      struct timeval timeout;
-      char res[100];
-
-again2:
-      FD_ZERO(&wait);
-      FD_SET(connection,&wait);
-      timeout = { 0, 100000 };
-      select(connection+1,&wait,NULL,NULL,&timeout);
-
-      /* recieve the response */
-      count = read(connection,res+count,30-count);
-      if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
-         errno = 0;
-         goto again2;
-      }
-      if (errno != 0)
-         return 0.0;
-
-      /* decode the response */
-      sscanf(res,"%lf %lf",&pos,&vel);
-
-      return vel;
    }
 
-   void set_rot_vel(Wheel wheel, double value) {
+   void get_response(int src, int num, double * res) {
 
-      /* load the command */
-      char cmd[128];
-      snprintf(cmd,128,"v %d %lf 0\n",wheel,value);
+      char buf[2048];
+      char * pos = buf;
+      char * nextpos = NULL;
 
-      int len = strlen(cmd);
+      int count = read(src,buf,sizeof(buf)-1);
+      buf[count] = '\0';
 
-      int count = 0;
-
-      /* send the command */
-again:
-      count = write(connection,cmd+count,len-count);
-      if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
-         errno = 0;
-         goto again;
+      for (int i = 0; i < num && pos; ++i) {
+         res[i] = strtod(pos,&nextpos);
+         pos = nextpos;
       }
+   }
+   
+   double get_rot_vel(enum Wheel wheel) {
+      char buf[1024];
+
+      double res[2];
+
+      snprintf(buf,1024,"f 0\n");
+      write(connection[wheel],buf,strlen(buf));
+
+      get_response(connection[wheel],2,res);
+
+      return res[1] / multiplier[wheel];
+   }
+
+   int reboot(enum Wheel wheel) {
+      char buf[1024];
+
+      snprintf(buf,1024,"sr\n");
+      write(connection[wheel],buf,strlen(buf));
+
+      return 0;
+   }
+
+   int clear_errors(enum Wheel wheel) {
+      char buf[1024];
+
+      snprintf(buf,1024,"sc\n");
+      write(connection[wheel],buf,strlen(buf));
+
+      return 0;
    }
 
 public:
 
    OdriveInterface() {}
 
-   OdriveInterface(double l_wheel_rad, double r_wheel_rad, double center_dist, std::string odrive_path) 
+   OdriveInterface(double l_wheel_rad, double r_wheel_rad, double center_dist, 
+                   std::string odrive0_path, double odrive0_multiplier, 
+                   std::string odrive1_path, double odrive1_multiplier)
       : controller(l_wheel_rad,r_wheel_rad,center_dist) {
 
-      connection = open(odrive_path.c_str(),O_RDWR|O_NONBLOCK);
+      connection[R_WHEEL] = open(odrive0_path.c_str(),O_RDWR|O_NOCTTY);
+      connection[L_WHEEL] = open(odrive1_path.c_str(),O_RDWR|O_NOCTTY);
 
-      if (connection == -1) {
+      multiplier[R_WHEEL] = odrive0_multiplier;
+      multiplier[L_WHEEL] = odrive1_multiplier;
 
-         perror("odrive_connection_failed");
+      if (connection[R_WHEEL] == -1) {
+
+         perror("odrive0 connection failed");
+         printf("exiting...\n");
+         exit(1);
+
+      }
+
+      if (connection[L_WHEEL] == -1) {
+
+         perror("odrive0 connection failed");
          printf("exiting...\n");
          exit(1);
 
@@ -139,6 +141,19 @@ public:
 
    }
 
+   void reboot_odrives() {
+
+      reboot(R_WHEEL);
+      reboot(L_WHEEL);
+
+   }
+
+   void clear_odrives() {
+
+      clear_errors(R_WHEEL);
+      clear_errors(L_WHEEL);
+
+   }
 
 };
 
