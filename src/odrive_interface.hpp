@@ -24,6 +24,7 @@ private:
    int connection[2];
    double multiplier[2];
    DiffDriveController controller;
+   std::string paths[2];
 
    enum Wheel { R_WHEEL=0, L_WHEEL=1 };
 
@@ -93,6 +94,9 @@ public:
       connection[R_WHEEL] = open(odrive0_path.c_str(),O_RDWR|O_NOCTTY);
       connection[L_WHEEL] = open(odrive1_path.c_str(),O_RDWR|O_NOCTTY);
 
+      paths[0] = odrive0_path;
+      paths[1] = odrive1_path;
+
       multiplier[R_WHEEL] = odrive0_multiplier;
       multiplier[L_WHEEL] = odrive1_multiplier;
 
@@ -151,8 +155,8 @@ public:
 
       sleep(10);
 
-      connection[R_WHEEL] = open(odrive0_path.c_str(),O_RDWR|O_NOCTTY);
-      connection[L_WHEEL] = open(odrive1_path.c_str(),O_RDWR|O_NOCTTY);
+      connection[R_WHEEL] = open(paths[0].c_str(),O_RDWR|O_NOCTTY);
+      connection[L_WHEEL] = open(paths[1].c_str(),O_RDWR|O_NOCTTY);
 
       if (connection[R_WHEEL] == -1) {
 
