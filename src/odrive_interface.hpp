@@ -146,6 +146,29 @@ public:
       reboot(R_WHEEL);
       reboot(L_WHEEL);
 
+      close(connection[R_WHEEL]);
+      close(connection[L_WHEEL]);
+
+      sleep(10);
+
+      connection[R_WHEEL] = open(odrive0_path.c_str(),O_RDWR|O_NOCTTY);
+      connection[L_WHEEL] = open(odrive1_path.c_str(),O_RDWR|O_NOCTTY);
+
+      if (connection[R_WHEEL] == -1) {
+
+         perror("odrive0 connection failed");
+         printf("exiting...\n");
+         exit(1);
+
+      }
+
+      if (connection[L_WHEEL] == -1) {
+
+         perror("odrive0 connection failed");
+         printf("exiting...\n");
+         exit(1);
+
+      }
    }
 
    void clear_odrives() {

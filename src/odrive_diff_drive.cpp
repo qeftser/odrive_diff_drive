@@ -116,7 +116,11 @@ private:
    void handle_reset(const std_msgs::msg::Empty & msg) {
       (void)msg;
 
+      RCLCPP_INFO(this->get_logger(),"Reboot Started");
+
       odrive.reboot_odrives();
+
+      RCLCPP_INFO(this->get_logger(),"Reboot Finished");
    }
 
 };
